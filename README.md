@@ -1,6 +1,6 @@
 # 仓库同步
 
-新增同步目标通常只需要在 `config/` 目录添加一个 `.yml` 文件。
+新增同步目标通常只需要在 `config` 目录添加一个 `.yml` 文件。
 
 ## 添加同步仓库
 
@@ -22,7 +22,7 @@ env:
 triggers:
   schedule: true
   schedule_cron:
-    - '0 16 * * *'
+    - '0 8 * * *'
   workflow_dispatch: true
 ```
 
