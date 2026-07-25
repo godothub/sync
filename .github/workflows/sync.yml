@@ -1,0 +1,171 @@
+name: Sync Repositories
+
+on:
+  schedule:
+    # BEGIN GENERATED SYNC SCHEDULES
+    - cron: '0 16 * * *'
+    # END GENERATED SYNC SCHEDULES
+  push:
+    branches:
+      - main
+    paths:
+      - 'config/*.yml'
+  workflow_dispatch:
+    inputs:
+      config:
+        description: Config filename from config/ (without extension), or all
+        required: false
+        default: all
+        type: string
+
+jobs:
+  update-schedules:
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: sync-schedule-update
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout workflow repository
+        uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GHP_TOKEN }}
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Checkout private sync scripts
+        uses: actions/checkout@v5
+        with:
+          repository: moluopro/sync
+          ref: main
+          token: ${{ secrets.GHP_TOKEN }}
+          path: private-sync
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Update generated schedules
+        env:
+          SYNC_CONFIG_DIRECTORY: ${{ github.workspace }}/config
+          SYNC_WORKFLOW_FILE: ${{ github.workspace }}/.github/workflows/sync.yml
+        run: bash private-sync/update-sync-schedules.sh
+
+  prepare:
+    if: ${{ github.event_name != 'push' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      has_configs: ${{ steps.matrix.outputs.has_configs }}
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - name: Checkout workflow repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Checkout private sync scripts
+        uses: actions/checkout@v5
+        with:
+          repository: moluopro/sync
+          ref: main
+          token: ${{ secrets.GHP_TOKEN }}
+          path: private-sync
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Build sync matrix from config directory
+        id: matrix
+        env:
+          SELECTED_CONFIG: ${{ github.event.inputs.config || 'all' }}
+          SYNC_CONFIG_DIRECTORY: ${{ github.workspace }}/config
+          GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule || '' }}
+        run: node private-sync/build-sync-matrix.js
+
+  sync:
+    name: ${{ matrix.name }}
+    if: ${{ needs.prepare.outputs.has_configs == 'true' }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    env:
+      SOURCE_GITHUB_REPO: ${{ matrix.SOURCE_GITHUB_REPO }}
+      TARGET_ATOMGIT_REPO: ${{ matrix.TARGET_ATOMGIT_REPO }}
+      MAX_SYNC_FILES: ${{ format('{0}', matrix.MAX_SYNC_FILES) }}
+      START_RELEASE_TAG: ${{ matrix.START_RELEASE_TAG }}
+      SKIP_RELEASES_BEFORE_START: ${{ format('{0}', matrix.SKIP_RELEASES_BEFORE_START) }}
+      SYNC_BRANCHES: ${{ format('{0}', matrix.SYNC_BRANCHES) }}
+      SYNC_TAGS: ${{ format('{0}', matrix.SYNC_TAGS) }}
+      SYNC_RELEASES: ${{ format('{0}', matrix.SYNC_RELEASES) }}
+    steps:
+      - name: Checkout workflow repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Checkout private sync scripts
+        uses: actions/checkout@v5
+        with:
+          repository: moluopro/sync
+          ref: main
+          token: ${{ secrets.GHP_TOKEN }}
+          path: private-sync
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Parse repositories
+        id: meta
+        shell: bash
+        run: bash private-sync/parse-sync-repositories.sh
+
+      - name: Configure AtomGit host resolve
+        shell: bash
+        run: bash private-sync/configure-atomgit-hosts.sh
+
+      - name: Mirror enabled Git refs to AtomGit
+        if: ${{ matrix.SYNC_BRANCHES || matrix.SYNC_TAGS }}
+        env:
+          SOURCE_REPO: ${{ steps.meta.outputs.source_repo }}
+          ATOMGIT_GIT_HOST: ${{ vars.ATOMGIT_GIT_HOST || 'atomgit.com' }}
+          ATOMGIT_GIT_OWNER: ${{ steps.meta.outputs.target_owner }}
+          ATOMGIT_GIT_REPO: ${{ steps.meta.outputs.target_name }}
+          ATOMGIT_GIT_USERNAME: ${{ secrets.ATOMGIT_GIT_USERNAME }}
+          ATOMGIT_TOKEN: ${{ secrets.ATOMGIT_TOKEN }}
+        shell: bash
+        run: bash private-sync/mirror-atomgit-refs.sh
+
+      - name: Sync AtomGit release and assets
+        if: ${{ matrix.SYNC_RELEASES }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_OWNER: ${{ steps.meta.outputs.source_owner }}
+          GITHUB_REPO: ${{ steps.meta.outputs.source_name }}
+          ATOMGIT_TOKEN: ${{ secrets.ATOMGIT_TOKEN }}
+          ATOMGIT_API_BASE: ${{ vars.ATOMGIT_API_BASE || 'https://api.atomgit.com' }}
+          ATOMGIT_OWNER: ${{ steps.meta.outputs.target_owner }}
+          ATOMGIT_REPO: ${{ steps.meta.outputs.target_name }}
+        run: node private-sync/sync-atomgit-release.js
