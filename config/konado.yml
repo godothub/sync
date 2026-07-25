@@ -1,7 +1,7 @@
 name: Sync Konado
 
 env:
-  SOURCE_GITHUB_REPO: godotengine/konado
+  SOURCE_GITHUB_REPO: godothub/konado
   TARGET_ATOMGIT_REPO: godothub/konado
   MAX_SYNC_FILES: 100
   START_RELEASE_TAG: ''
