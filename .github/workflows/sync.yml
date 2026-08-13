@@ -105,6 +105,8 @@ jobs:
       contents: read
     strategy:
       fail-fast: false
+      # AtomGit limits API usage per account, and every entry uses the same token.
+      max-parallel: 1
       matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     env:
       SOURCE_GITHUB_REPO: ${{ matrix.SOURCE_GITHUB_REPO }}
@@ -113,6 +115,7 @@ jobs:
       START_RELEASE_TAG: ${{ matrix.START_RELEASE_TAG }}
       SKIP_RELEASES_BEFORE_START: ${{ format('{0}', matrix.SKIP_RELEASES_BEFORE_START) }}
       SYNC_BRANCHES: ${{ format('{0}', matrix.SYNC_BRANCHES) }}
+      FORCE_SYNC_BRANCHES: ${{ format('{0}', matrix.FORCE_SYNC_BRANCHES) }}
       SYNC_TAGS: ${{ format('{0}', matrix.SYNC_TAGS) }}
       SYNC_RELEASES: ${{ format('{0}', matrix.SYNC_RELEASES) }}
     steps:
