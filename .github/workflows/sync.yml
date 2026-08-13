@@ -116,6 +116,8 @@ jobs:
       SKIP_RELEASES_BEFORE_START: ${{ format('{0}', matrix.SKIP_RELEASES_BEFORE_START) }}
       SYNC_BRANCHES: ${{ format('{0}', matrix.SYNC_BRANCHES) }}
       FORCE_SYNC_BRANCHES: ${{ format('{0}', matrix.FORCE_SYNC_BRANCHES) }}
+      BRANCH_PUSH_BATCH_SIZE: ${{ format('{0}', matrix.BRANCH_PUSH_BATCH_SIZE) }}
+      GIT_HTTP_POST_BUFFER_BYTES: ${{ format('{0}', matrix.GIT_HTTP_POST_BUFFER_BYTES) }}
       SYNC_TAGS: ${{ format('{0}', matrix.SYNC_TAGS) }}
       SYNC_RELEASES: ${{ format('{0}', matrix.SYNC_RELEASES) }}
     steps:

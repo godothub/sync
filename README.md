@@ -17,6 +17,8 @@ env:
   SKIP_RELEASES_BEFORE_START: false
   SYNC_BRANCHES: true
   FORCE_SYNC_BRANCHES: false
+  BRANCH_PUSH_BATCH_SIZE: 0
+  GIT_HTTP_POST_BUFFER_BYTES: 0
   SYNC_TAGS: true
   SYNC_RELEASES: true
 
@@ -39,6 +41,8 @@ triggers:
 | `SKIP_RELEASES_BEFORE_START` | 布尔值 | 为 `true` 时忽略 `START_RELEASE_TAG` 之前的 Release。此时 Tag 必须存在于源仓库。 |
 | `SYNC_BRANCHES` | 布尔值 | 是否同步全部 Git 分支。 |
 | `FORCE_SYNC_BRANCHES` | 布尔值 | 是否允许用源分支覆盖 AtomGit 上已经分叉的分支。仅应对纯镜像仓库开启；推送使用带目标旧 SHA 的 `--force-with-lease`。 |
+| `BRANCH_PUSH_BATCH_SIZE` | 数字 | 强制同步分叉分支时，每批推进的主线提交数。`0` 表示一次推送；大仓库可设置为较小的正整数，避免单个 HTTP 推送包过大。 |
+| `GIT_HTTP_POST_BUFFER_BYTES` | 数字 | Git HTTP 请求缓冲区字节数。`0` 使用 Git 默认值；大仓库可适当提高，避免代理对分块上传处理不稳定。 |
 | `SYNC_TAGS` | 布尔值 | 是否同步全部 Git 标签。同步 Release 时建议开启。 |
 | `SYNC_RELEASES` | 布尔值 | 是否同步 Release 元数据和附件。 |
 | `schedule` | 布尔值 | 是否启用定时同步。 |
@@ -82,18 +86,24 @@ triggers:
 # 完整同步
 SYNC_BRANCHES: true
 FORCE_SYNC_BRANCHES: false
+BRANCH_PUSH_BATCH_SIZE: 0
+GIT_HTTP_POST_BUFFER_BYTES: 0
 SYNC_TAGS: true
 SYNC_RELEASES: true
 
 # 只同步标签和 Release
 SYNC_BRANCHES: false
 FORCE_SYNC_BRANCHES: false
+BRANCH_PUSH_BATCH_SIZE: 0
+GIT_HTTP_POST_BUFFER_BYTES: 0
 SYNC_TAGS: true
 SYNC_RELEASES: true
 
 # 只同步 Git 代码和标签
 SYNC_BRANCHES: true
 FORCE_SYNC_BRANCHES: false
+BRANCH_PUSH_BATCH_SIZE: 0
+GIT_HTTP_POST_BUFFER_BYTES: 0
 SYNC_TAGS: true
 SYNC_RELEASES: false
 ```
