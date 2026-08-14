@@ -119,6 +119,7 @@ jobs:
       BRANCH_PUSH_BATCH_SIZE: ${{ format('{0}', matrix.BRANCH_PUSH_BATCH_SIZE) }}
       GIT_HTTP_POST_BUFFER_BYTES: ${{ format('{0}', matrix.GIT_HTTP_POST_BUFFER_BYTES) }}
       SYNC_TAGS: ${{ format('{0}', matrix.SYNC_TAGS) }}
+      FORCE_SYNC_TAGS: ${{ format('{0}', matrix.FORCE_SYNC_TAGS) }}
       SYNC_RELEASES: ${{ format('{0}', matrix.SYNC_RELEASES) }}
     steps:
       - name: Checkout workflow repository

@@ -44,6 +44,7 @@ triggers:
 | `BRANCH_PUSH_BATCH_SIZE` | 数字 | 强制同步分叉分支时，每批推进的主线提交数。`0` 表示一次推送；大仓库可设置为较小的正整数，避免单个 HTTP 推送包过大。 |
 | `GIT_HTTP_POST_BUFFER_BYTES` | 数字 | Git HTTP 请求缓冲区字节数。`0` 使用 Git 默认值；大仓库可适当提高，避免代理对分块上传处理不稳定。 |
 | `SYNC_TAGS` | 布尔值 | 是否同步全部 Git 标签。同步 Release 时建议开启。 |
+| `FORCE_SYNC_TAGS` | 布尔值 | 是否用源标签安全覆盖 AtomGit 上同名但对象不同的标签。仅应对纯镜像仓库开启；更新使用带目标旧 SHA 的 `--force-with-lease`。 |
 | `SYNC_RELEASES` | 布尔值 | 是否同步 Release 元数据和附件。 |
 | `schedule` | 布尔值 | 是否启用定时同步。 |
 | `schedule_cron` | 字符串数组 | 定时同步的 UTC cron 表达式列表。`schedule` 为 `false` 时不会生效。 |
